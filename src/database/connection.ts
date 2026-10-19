@@ -1,3 +1,5 @@
+// File: src/database/connection.ts
+
 import mongoose from 'mongoose';
 
 import { env, isProduction } from '../config/env.js';
@@ -17,11 +19,15 @@ export async function connectDatabase(): Promise<void> {
   mongoose.connection.on('reconnected', () => logger.info('MongoDB reconnected'));
   mongoose.connection.on('error', (error: Error) => logger.error({ err: error }, 'MongoDB error'));
 
-  await mongoose.connect(env.MONGODB_URI, {
-    serverSelectionTimeoutMS: 10_000,
-    maxPoolSize: 20,
-    retryWrites: true,
-  });
+  try {
+    await mongoose.connect(env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 10_000,
+      maxPoolSize: 20,
+      retryWrites: true,
+    });
+  } catch (error) {
+    throw new Error(explainConnectionError(error), { cause: error });
+  }
 
   const db = mongoose.connection.db;
   if (!db) throw new Error('MongoDB connected without a database handle');
@@ -36,6 +42,28 @@ export async function connectDatabase(): Promise<void> {
   }
 
   logger.info({ db: db.databaseName, replicaSet: hello.setName ?? 'sharded' }, 'MongoDB connected');
+}
+
+/** Turns the driver's server-selection errors into an actionable message. */
+function explainConnectionError(error: unknown): string {
+  const reasonType = (error as { reason?: { type?: string } }).reason?.type;
+  const message = error instanceof Error ? error.message : String(error);
+
+  if (reasonType === 'ReplicaSetNoPrimary' || /ECONNREFUSED|Server selection timed out/i.test(message)) {
+    return (
+      `Cannot reach a MongoDB replica-set primary at ${redactUri(env.MONGODB_URI)}. Check, in order: ` +
+      '(1) the database is running: `docker compose ps` shows mongo as healthy; ' +
+      '(2) the replica set is initiated (the Docker healthcheck does this on first start); ' +
+      '(3) no other MongoDB, such as a local Windows service, is using the same port; ' +
+      '(4) for Atlas: the connection string and your IP allow-list.'
+    );
+  }
+  return `MongoDB connection failed: ${message}`;
+}
+
+/** Hides the password in a connection string before it is logged. */
+function redactUri(uri: string): string {
+  return uri.replace(/\/\/([^:/@]+):([^@]+)@/, '//$1:***@');
 }
 
 export async function disconnectDatabase(): Promise<void> {

@@ -1,0 +1,12 @@
+# File: .gitattributes
+# Keep LF line endings in the repo on every OS (Windows checkouts included),
+# so Prettier, Docker and Linux servers all see the same files.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.pdf binary
+*.zip binary

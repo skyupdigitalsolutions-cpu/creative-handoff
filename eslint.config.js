@@ -1,3 +1,4 @@
+// File: eslint.config.js
 // @ts-check
 import js from '@eslint/js';
 import prettier from 'eslint-config-prettier';
@@ -44,7 +45,12 @@ export default tseslint.config(
   },
   {
     files: ['tests/**', 'scripts/**'],
-    rules: { 'no-console': 'off' },
+    rules: {
+      'no-console': 'off',
+      // supertest response bodies are untyped JSON
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+    },
   },
   prettier,
 );
