@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+coverage/
+*.tsbuildinfo
+
+# Environment (never commit real secrets; .env.example is the template)
+.env
+.env.*
+!.env.example
+
+# Generated contract for the frontend (regenerate with npm run gen:openapi)
+openapi.json
+
+# Logs and OS files
+logs/
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
